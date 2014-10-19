@@ -126,6 +126,8 @@ namespace IsolatedRazor
 					templateCache = new TemplateCache();
 			}
 
+			Directory.CreateDirectory(templatePath);
+
 			PermissionSet permSet = new PermissionSet(PermissionState.None);
 			permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));					// run the code
 			permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));		// remoting lifetime (sponsor)

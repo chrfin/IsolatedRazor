@@ -12,15 +12,30 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{1B75C4
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IsolatedRazor.Demo", "IsolatedRazor.Demo\IsolatedRazor.Demo.csproj", "{21D4F726-B4E8-4974-B682-466BBC17DEE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IsolatedRazor.Demo.Shared", "IsolatedRazor.Demo.Shared\IsolatedRazor.Demo.Shared.csproj", "{118BFDBE-7320-45D9-9421-42DA262D640A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IsolatedRazor.Demo.Web", "IsolatedRazor.Demo.Web\IsolatedRazor.Demo.Web.csproj", "{916BD3A1-56B1-4818-8D21-538FF57F1E49}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 2
+		SccNumberOfProjects = 5
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs14
 		SccLocalPath0 = .
 		SccProjectUniqueName1 = IsolatedRazor\\IsolatedRazor.csproj
 		SccProjectName1 = IsolatedRazor
 		SccLocalPath1 = IsolatedRazor
+		SccProjectUniqueName2 = IsolatedRazor.Demo\\IsolatedRazor.Demo.csproj
+		SccProjectName2 = IsolatedRazor.Demo
+		SccLocalPath2 = IsolatedRazor.Demo
+		SccProjectUniqueName3 = IsolatedRazor.Demo.Shared\\IsolatedRazor.Demo.Shared.csproj
+		SccProjectName3 = IsolatedRazor.Demo.Shared
+		SccLocalPath3 = IsolatedRazor.Demo.Shared
+		SccProjectUniqueName4 = IsolatedRazor.Demo.Web\\IsolatedRazor.Demo.Web.csproj
+		SccProjectName4 = IsolatedRazor.Demo.Web
+		SccLocalPath4 = IsolatedRazor.Demo.Web
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +46,18 @@ Global
 		{7DECF9FA-6983-4D57-BCB0-2251ACBFC05D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DECF9FA-6983-4D57-BCB0-2251ACBFC05D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7DECF9FA-6983-4D57-BCB0-2251ACBFC05D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21D4F726-B4E8-4974-B682-466BBC17DEE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21D4F726-B4E8-4974-B682-466BBC17DEE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21D4F726-B4E8-4974-B682-466BBC17DEE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21D4F726-B4E8-4974-B682-466BBC17DEE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{118BFDBE-7320-45D9-9421-42DA262D640A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{118BFDBE-7320-45D9-9421-42DA262D640A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{118BFDBE-7320-45D9-9421-42DA262D640A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{118BFDBE-7320-45D9-9421-42DA262D640A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{916BD3A1-56B1-4818-8D21-538FF57F1E49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{916BD3A1-56B1-4818-8D21-538FF57F1E49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{916BD3A1-56B1-4818-8D21-538FF57F1E49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{916BD3A1-56B1-4818-8D21-538FF57F1E49}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
