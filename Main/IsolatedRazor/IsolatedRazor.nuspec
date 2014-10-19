@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+		<metadata>
+				<id>IsolatedRazor</id>
+				<version>1.0.5405.25953</version>
+				<title>IsolatedRazor</title>
+				<authors>Fink IT</authors>
+				<licenseUrl>https://isolatedrazor.codeplex.com/license</licenseUrl>
+				<projectUrl>https://isolatedrazor.codeplex.com/</projectUrl>
+				<requireLicenseAcceptance>false</requireLicenseAcceptance>
+				<description>Offers a secure and isolated template rendering engine using the Razor syntax. This project is heavily based on RazorEngine.</description>
+				<releaseNotes>Initial release</releaseNotes>
+				<summary />
+				<copyright>Copyright ©  2014 Fink IT</copyright>
+				<tags>razor templates</tags>
+				<dependencies>
+						<dependency id="ImpromptuInterface" version="6.2.2" />
+						<dependency id="Microsoft.AspNet.Razor" version="3.2.2" />
+				</dependencies>
+		</metadata>
+</package>
