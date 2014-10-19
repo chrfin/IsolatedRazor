@@ -43,10 +43,14 @@ namespace IsolatedRazor.Demo
 			var model = new Person { Name = "CFI" };
 
 			var timestamp = DateTime.Now;
+			var stopWatch = Stopwatch.StartNew();
 			using (var templater = new IsolatedRazor.RazorTemplater(templatePath))
 			{
+				stopWatch.Stop();
+				Console.WriteLine("Templater created in ms: " + stopWatch.Elapsed.TotalMilliseconds);
+
 				Console.WriteLine("=============================================================================");
-				var stopWatch = Stopwatch.StartNew();
+				stopWatch = Stopwatch.StartNew();
 				using (var service = new RazorEngine.Templating.IsolatedTemplateService())
 				{
 					Console.WriteLine("RazorEngine: " + service.Parse(template, model, null, String.Empty));
@@ -90,12 +94,18 @@ namespace IsolatedRazor.Demo
 
 				await ExecuteTestAsync(timestamp, "Loop", async () => await templater.ParseAsync("Loop", "@while(true);", timestamp, model).ConfigureAwait(false));
 
+				await ExecuteTestAsync(timestamp, "Task-Loop",
+					async () => await templater.ParseAsync("Loop", "@{ System.Threading.Tasks.Task.Run(() => { while(true) { System.Threading.Thread.Sleep(100); System.Console.WriteLine(\"FAIL\"); } }); }",
+						timestamp, model).ConfigureAwait(false));
+
 				await ExecuteTestAsync(timestamp, "Error", async () => await templater.CompileAsync("Error", template + "@Model.DoNotExist", timestamp, typeof(TemplateBase<Person>)).ConfigureAwait(false));
 
 				Console.WriteLine("=============================================================================");
-				Console.WriteLine("DONE - press ENTER to exit");
-				Console.ReadLine();
+				System.Threading.Thread.Sleep(250);
 			}
+
+			Console.WriteLine("DONE - press ENTER to exit");
+			Console.ReadLine();
 		}
 
 		private static async Task ExecuteTestAsync(DateTime timestamp, string name, Func<Task<string>> test)
@@ -105,7 +115,7 @@ namespace IsolatedRazor.Demo
 				var stopWatch = Stopwatch.StartNew();
 				Console.WriteLine(name + ": " + await test().ConfigureAwait(false));
 				stopWatch.Stop();
-				Console.WriteLine("Time needed for Layout in ms: " + stopWatch.Elapsed.TotalMilliseconds);
+				Console.WriteLine("Time needed in ms: " + stopWatch.Elapsed.TotalMilliseconds);
 				Console.WriteLine("=============================================================================");
 			}
 			catch (Exception ex)
