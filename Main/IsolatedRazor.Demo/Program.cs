@@ -84,7 +84,7 @@ namespace IsolatedRazor.Demo
 				await ExecuteTestAsync(timestamp, "Local-Model",
 					async () => await templater.ParseAsync("Local", "<div>Hello @Model.Message</div>", timestamp, new DemoModel() { Message = "Demo Model!" }).ConfigureAwait(false));
 
-				Console.WriteLine("Press ENTER to run error cases (DO NOT run with attached debugger - timeout is disabled then -> dead-lock):");
+				Console.WriteLine("Press ENTER to run error cases:");
 				Console.ReadLine();
 
 				await ExecuteTestAsync(timestamp, "FileIO", async () => await templater.ParseAsync("FileIO", template, timestamp, model).ConfigureAwait(false));
@@ -92,15 +92,20 @@ namespace IsolatedRazor.Demo
 				await ExecuteTestAsync(timestamp, "SQL",
 					async () => await templater.ParseAsync("SQL", "@{ var con = new System.Data.SqlClient.SqlConnection(@\"" + cs + "\"); con.Open(); } State: @con.State", timestamp, model).ConfigureAwait(false));
 
-				await ExecuteTestAsync(timestamp, "Loop", async () => await templater.ParseAsync("Loop", "@while(true);", timestamp, model).ConfigureAwait(false));
-
 				await ExecuteTestAsync(timestamp, "Task-Loop",
 					async () => await templater.ParseAsync("Loop", "@{ System.Threading.Tasks.Task.Run(() => { while(true) { System.Threading.Thread.Sleep(100); System.Console.WriteLine(\"FAIL\"); } }); }",
 						timestamp, model).ConfigureAwait(false));
 
+				if (!System.Diagnostics.Debugger.IsAttached)
+					await ExecuteTestAsync(timestamp, "Loop", async () => await templater.ParseAsync("Loop", "@while(true);", timestamp, model).ConfigureAwait(false));
+				else
+				{
+					Console.WriteLine("Skipped timeout test - DO NOT run with attached debugger - timeout is disabled then -> dead-lock");
+					Console.WriteLine("=============================================================================");
+				}
+
 				await ExecuteTestAsync(timestamp, "Error", async () => await templater.CompileAsync("Error", template + "@Model.DoNotExist", timestamp, typeof(TemplateBase<Person>)).ConfigureAwait(false));
 
-				Console.WriteLine("=============================================================================");
 				System.Threading.Thread.Sleep(250);
 			}
 

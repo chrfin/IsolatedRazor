@@ -16,11 +16,15 @@
 # Specify the Version Number to use for the NuGet package. If not specified, the version number of the assembly being packed will be used.
 # NuGet version number guidance: https://docs.nuget.org/docs/reference/versioning and the Semantic Versioning spec: http://semver.org/
 # e.g. "" (use assembly's version), "1.2.3" (stable version), "1.2.3-alpha" (prerelease version).
-$versionNumber = "1.0.1.0"
+$versionNumber = "1.1.0.0"
 
 # Specify any Release Notes for this package.
 # These will only be included in the package if you have a .nuspec file for the project in the same directory as the project file.
-$releaseNotes = "Fix crash when template directory does not exist."
+$releaseNotes = "V 1.1.0.0:
+	- 'ForbiddenTypes' added to disallow (by default) the usage of Tasks and Threads
+
+V 1.0.1.0:
+	- Fix crash when template directory does not exist."
 
 # Specify a specific Configuration and/or Platform to only create a NuGet package when building the project with this Configuration and/or Platform.
 #	e.g. $configuration = "Release"
