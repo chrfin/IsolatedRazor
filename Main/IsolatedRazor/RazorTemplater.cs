@@ -18,6 +18,7 @@ using IsolatedRazor.Enumerations;
 using IsolatedRazor.Interfaces;
 using Microsoft.CSharp;
 using Microsoft.VisualBasic;
+using Mono.Cecil;
 
 namespace IsolatedRazor
 {
@@ -33,6 +34,11 @@ namespace IsolatedRazor
 		private bool persistTemplates;
 		private bool isShadowCopied;
 
+		private AppDomainSetup adSetup;
+		private PermissionSet permissionSet;
+		private ClientSponsor clientSponsor;
+		private ReaderParameters readerParameters;
+
 		private AppDomain appDomain = null;
 		private RazorTemplater templater = null;
 		private CodeDomProvider provider = null;
@@ -42,12 +48,13 @@ namespace IsolatedRazor
 		private static Dictionary<string, Assembly> assemblyCache = new Dictionary<string, Assembly>();
 
 		/// <summary>Gets or sets the render timeout (in milliseconds).</summary>
-		/// <value>The render timeout.</value>
 		public int RenderTimeout { get; set; }
 
 		/// <summary>Gets or sets the default namespaces.</summary>
-		/// <value>The default namespaces.</value>
 		public List<string> DefaultNamespaces { get; set; }
+
+		/// <summary>Gets or sets the forbidden types (FQDN).</summary>
+		public List<string> ForbiddenTypes { get; set; }
 
 		/// <summary>Initializes a new instance of the <see cref="RazorTemplater" /> class.</summary>
 		/// <param name="templateNamespace">The template namespace.</param>
@@ -69,16 +76,19 @@ namespace IsolatedRazor
 		/// <param name="allowedDirectories">The directories the templates are allowed to read from.</param>
 		/// <param name="baseType">Type of the template base class. Defaults to <see cref="TemplateBase" />.</param>
 		/// <param name="defaultNamespaces">The default namespaces. Defaults to "System", "System.Collections.Generic", "System.Linq" and "System.Text".</param>
+		/// <param name="forbiddenTypes">The forbidden types (FQDN). Defaults to "Task" and "Thread".</param>
 		/// <param name="language">The language. Defaults to C#.</param>
 		/// <param name="sponsor">The sponsor to keep the object alive.</param>
 		/// <param name="persistTemplates">If set to <c>true</c> the generated templates are persisted over multiple application runs. Otherwise they are deleted when disposing.</param>
 		public RazorTemplater(string templateAssemblyPath, int renderTimeout = 5000, string templateNamespace = "IsolatedRazor.RazorTemplate", List<string> allowedDirectories = null,
-			Type baseType = null, List<string> defaultNamespaces = null, RazorCodeLanguage language = null, ClientSponsor sponsor = null, bool persistTemplates = false)
+			Type baseType = null, List<string> defaultNamespaces = null, List<string> forbiddenTypes = null, RazorCodeLanguage language = null, ClientSponsor sponsor = null, bool persistTemplates = false)
 		{
 			RenderTimeout = renderTimeout;
 			this.templateNamespace = templateNamespace;
 			this.persistTemplates = persistTemplates;
 			DefaultNamespaces = defaultNamespaces ?? new List<string>() { "System", "System.Collections.Generic", "System.Net", "System.Linq", "System.Text", "IsolatedRazor" };
+			ForbiddenTypes = forbiddenTypes ?? new List<string>() { "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Thread" };
+			clientSponsor = sponsor ?? new ClientSponsor(TimeSpan.FromMinutes(1));
 
 			defaultBaseClass = (baseType ?? typeof(TemplateBase)).FullName;
 			var host = new RazorEngineHost(language ?? new CSharpRazorCodeLanguage()) { DefaultNamespace = templateNamespace };
@@ -86,7 +96,7 @@ namespace IsolatedRazor
 			engine = new RazorTemplateEngine(host);
 			provider = host.CodeLanguage.LanguageName == "vb" ? (CodeDomProvider)new VBCodeProvider() : new CSharpCodeProvider();
 
-			AppDomainSetup adSetup = new AppDomainSetup();
+			adSetup = new AppDomainSetup();
 			if (AppDomain.CurrentDomain.SetupInformation.ShadowCopyFiles == "true")
 			{
 				isShadowCopied = true;
@@ -111,6 +121,10 @@ namespace IsolatedRazor
 				adSetup.PrivateBinPath = AppDomain.CurrentDomain.SetupInformation.PrivateBinPath;
 			}
 
+			var resolver = new DefaultAssemblyResolver();
+			resolver.AddSearchDirectory(Path.GetDirectoryName(adSetup.ApplicationBase));
+			readerParameters = new ReaderParameters() { AssemblyResolver = resolver };
+
 			if (templateCache == null)
 			{
 				var path = Path.Combine(templatePath, TEMPLATE_CACHE_FILE);
@@ -128,24 +142,16 @@ namespace IsolatedRazor
 
 			Directory.CreateDirectory(templatePath);
 
-			PermissionSet permSet = new PermissionSet(PermissionState.None);
-			permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));					// run the code
-			permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));		// remoting lifetime (sponsor)
-			permSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, templatePath));				// read templates
-			permSet.AddPermission(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess));	// support dynamic
+			permissionSet = new PermissionSet(PermissionState.None);
+			permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));					// run the code
+			permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));		// remoting lifetime (sponsor)
+			permissionSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, templatePath));				// read templates
+			permissionSet.AddPermission(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess));	// support dynamic
 
 			if(allowedDirectories != null)
-				allowedDirectories.ForEach(dir => permSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, dir)));
+				allowedDirectories.ForEach(dir => permissionSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, dir)));
 
-			appDomain = AppDomain.CreateDomain("razorDomain", null, adSetup, permSet);
-
-			ObjectHandle handle = Activator.CreateInstanceFrom(appDomain, typeof(RazorTemplater).Assembly.ManifestModule.FullyQualifiedName, typeof(RazorTemplater).FullName,
-				false, BindingFlags.CreateInstance, null, new object[] { templateNamespace, SAFE_GUARD }, null, null);
-			templater = (RazorTemplater)handle.Unwrap();
-
-			if (sponsor == null)
-				sponsor = new ClientSponsor(TimeSpan.FromMinutes(1));
-			sponsor.Register(templater);
+			RecycleAppDomain();
 		}
 		/// <summary>Finalizes an instance of the <see cref="RazorTemplater"/> class.</summary>
 		~RazorTemplater() { Dispose(); }
@@ -159,6 +165,7 @@ namespace IsolatedRazor
 				catch { }
 				appDomain = null;
 			}
+
 			if(templateCache != null)
 			{
 				if (persistTemplates)
@@ -180,6 +187,25 @@ namespace IsolatedRazor
 					}
 				}
 			}
+		}
+
+		/// <summary>Recycles the application domain by killing the current one and creating a new one.</summary>
+		private void RecycleAppDomain()
+		{
+			if (appDomain != null)
+			{
+				var oldDomain = appDomain;
+				try { Task.Run(() => AppDomain.Unload(oldDomain)); }
+				catch { }
+			}
+
+			appDomain = AppDomain.CreateDomain("razorDomain", null, adSetup, permissionSet);
+
+			ObjectHandle handle = Activator.CreateInstanceFrom(appDomain, typeof(RazorTemplater).Assembly.ManifestModule.FullyQualifiedName, typeof(RazorTemplater).FullName,
+				false, BindingFlags.CreateInstance, null, new object[] { templateNamespace, SAFE_GUARD }, null, null);
+			templater = (RazorTemplater)handle.Unwrap();
+
+			clientSponsor.Register(templater);
 		}
 
 		/// <summary>Deletes the template from the cache so it will be regenerated if parsed again.</summary>
@@ -342,8 +368,12 @@ namespace IsolatedRazor
 							message += error.ToString() + Environment.NewLine;
 					}
 
+					if (File.Exists(compiledAssembly.PathToAssembly))
+						File.Delete(compiledAssembly.PathToAssembly);
 					throw new CompilerException(message, compiledAssembly.Errors);
 				}
+
+				ValidateAssembly(compiledAssembly);
 
 				var assemblyPath = compiledAssembly.PathToAssembly;
 				templateCache.Set(name, assemblyPath, template, timestamp);
@@ -432,14 +462,36 @@ namespace IsolatedRazor
 							message += error.ToString() + Environment.NewLine;
 					}
 
+					if (File.Exists(compiledAssembly.PathToAssembly))
+						File.Delete(compiledAssembly.PathToAssembly);
 					throw new CompilerException(message, compiledAssembly.Errors);
 				}
+
+				ValidateAssembly(compiledAssembly);
 
 				var assemblyPath = compiledAssembly.PathToAssembly;
 				templateCache.Set(groupName, assemblyPath, templates, timestamp);
 
 				return assemblyPath;
 			});
+		}
+
+		/// <summary>Validates the assembly for the usage of forbidden types.</summary>
+		/// <param name="compiledAssembly">The compiled assembly.</param>
+		private void ValidateAssembly(CompilerResults compiledAssembly)
+		{
+			var assembly = AssemblyDefinition.ReadAssembly(compiledAssembly.PathToAssembly, readerParameters);
+			foreach (var module in assembly.Modules)
+			{
+				foreach (var type in module.GetTypeReferences())
+				{
+					if (ForbiddenTypes.Contains(type.FullName))
+					{
+						File.Delete(compiledAssembly.PathToAssembly);
+						throw new CompilerException(String.Format("Usage of type '{0}' is not allowed.", type.FullName), compiledAssembly.Errors);
+					}
+				}
+			}
 		}
 
 		/// <summary>Saves the generated code.</summary>
