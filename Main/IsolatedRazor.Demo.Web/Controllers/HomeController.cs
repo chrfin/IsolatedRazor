@@ -17,7 +17,6 @@ namespace WebRazorTest.Controllers
 	public class HomeController : Controller
 	{
 		private string templatePath = HostingEnvironment.MapPath("~/App_Data/Temp/");
-		private string templateNamespace = "IsolatedRazor.RazorTemplate";
 
 		public ActionResult Index()
 		{

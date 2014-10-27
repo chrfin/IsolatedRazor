@@ -76,7 +76,7 @@ namespace IsolatedRazor
 		/// <param name="allowedDirectories">The directories the templates are allowed to read from.</param>
 		/// <param name="baseType">Type of the template base class. Defaults to <see cref="TemplateBase" />.</param>
 		/// <param name="defaultNamespaces">The default namespaces. Defaults to "System", "System.Collections.Generic", "System.Linq" and "System.Text".</param>
-		/// <param name="forbiddenTypes">The forbidden types (FQDN). Defaults to "Task" and "Thread".</param>
+		/// <param name="forbiddenTypes">The forbidden types (FQDN). Defaults to "Task", "Thread", "System.Activator" and "System.Reflection.Assembly".</param>
 		/// <param name="language">The language. Defaults to C#.</param>
 		/// <param name="sponsor">The sponsor to keep the object alive.</param>
 		/// <param name="persistTemplates">If set to <c>true</c> the generated templates are persisted over multiple application runs. Otherwise they are deleted when disposing.</param>
@@ -87,7 +87,7 @@ namespace IsolatedRazor
 			this.templateNamespace = templateNamespace;
 			this.persistTemplates = persistTemplates;
 			DefaultNamespaces = defaultNamespaces ?? new List<string>() { "System", "System.Collections.Generic", "System.Net", "System.Linq", "System.Text", "IsolatedRazor" };
-			ForbiddenTypes = forbiddenTypes ?? new List<string>() { "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Thread" };
+			ForbiddenTypes = forbiddenTypes ?? new List<string>() { "System.Threading.Tasks.Task", "System.Threading.Tasks.Task`1", "System.Threading.Thread", "System.Activator", "System.Reflection.Assembly" };
 			clientSponsor = sponsor ?? new ClientSponsor(TimeSpan.FromMinutes(1));
 
 			defaultBaseClass = (baseType ?? typeof(TemplateBase)).FullName;
@@ -145,7 +145,7 @@ namespace IsolatedRazor
 			permissionSet = new PermissionSet(PermissionState.None);
 			permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));					// run the code
 			permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));		// remoting lifetime (sponsor)
-			permissionSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, templatePath));				// read templates
+			permissionSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, templatePath));			// read templates
 			permissionSet.AddPermission(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess));	// support dynamic
 
 			if(allowedDirectories != null)
