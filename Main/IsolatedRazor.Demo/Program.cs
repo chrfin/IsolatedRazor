@@ -96,6 +96,26 @@ namespace IsolatedRazor.Demo
 					async () => await templater.ParseAsync("Loop", "@{ System.Threading.Tasks.Task.Run(() => { while(true) { System.Threading.Thread.Sleep(100); System.Console.WriteLine(\"FAIL\"); } }); }",
 						timestamp, model).ConfigureAwait(false));
 
+				await ExecuteTestAsync(timestamp, "Task via reflection",
+					async () => await templater.ParseAsync("Loop", "@{ Action action = () => { Console.WriteLine(\"FAIL\"); };" +
+						"var task = Activator.CreateInstance(Type.GetType(\"System.Threading.Tasks.Task\"), new object[] { action });" +
+						"task.GetType().InvokeMember(\"RunSynchronously\", System.Reflection.BindingFlags.InvokeMethod, null, task, null); }",
+						timestamp, model).ConfigureAwait(false));
+
+				await ExecuteTestAsync(timestamp, "Task via Assembly",
+					async () => await templater.ParseAsync("Loop", "@{ Action action = () => { Console.WriteLine(\"FAIL\"); };" +
+						"var task = System.Reflection.Assembly.Load(\"mscorlib\").CreateInstance(\"System.Threading.Tasks.Task\", " +
+							"false, System.Reflection.BindingFlags.CreateInstance, null, new object[] { action }, null, null);" +
+						"task.GetType().InvokeMember(\"RunSynchronously\", System.Reflection.BindingFlags.InvokeMethod, null, task, null); }",
+						timestamp, model).ConfigureAwait(false));
+
+				await ExecuteTestAsync(timestamp, "Task via AppDomain",
+					async () => await templater.ParseAsync("Loop", "@{ Action action = () => { Console.WriteLine(\"FAIL\"); };" +
+						"var task = System.AppDomain.CurrentDomain.GetAssemblies().First(a => a.FullName.Contains(\"mscorlib\")).CreateInstance(\"System.Threading.Tasks.Task\", " +
+							"false, System.Reflection.BindingFlags.CreateInstance, null, new object[] { action }, null, null);" +
+						"task.GetType().InvokeMember(\"RunSynchronously\", System.Reflection.BindingFlags.InvokeMethod, null, task, null); }",
+						timestamp, model).ConfigureAwait(false));
+
 				if (!System.Diagnostics.Debugger.IsAttached)
 					await ExecuteTestAsync(timestamp, "Loop", async () => await templater.ParseAsync("Loop", "@while(true);", timestamp, model).ConfigureAwait(false));
 				else
