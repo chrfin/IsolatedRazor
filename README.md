@@ -1,3 +1,7 @@
+## DEPRICATION NOTICE
+
+This project is no longer used by myself and thus not maintained anymore. Consider using https://github.com/sebastienros/fluid instead.
+
 # IsolatedRazor
 Offers a secure and isolated template rendering engine using the Razor syntax. This project is heavily based on [RazorEngine](https://github.com/Antaris/RazorEngine).
 
